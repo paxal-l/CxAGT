@@ -3,7 +3,6 @@ import requests
 import time
 import os
 import fcntl
-
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
