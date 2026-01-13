@@ -1,0 +1,27 @@
+# Python / venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+bin/
+include/
+lib/
+lib64
+share/
+pyvenv.cfg
+
+# Local artifacts
+*.log
+*.swp
+*.save
+.env
+memory*.txt
+ledger*.log
+*.db
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
