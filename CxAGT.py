@@ -11,10 +11,9 @@ app = Flask(__name__)
 # ============================================================
 # KONFIGURATION
 # ============================================================
-PRIMARY = "http://192.168.50.233:11434"    # Gaming-PC med lokal Ollama
-FALLBACK = "http://127.0.0.1:11434"        # Garage server med lokal Ollama
+PRIMARY = "http://192.168.50.233:11434"    # Remote Ollama (or similar API), primary and best server
+FALLBACK = "http://127.0.0.1:11434"        # Fallback server (this server) with local Ollama
 MEMORY_FILE = "/home/ubuntu/mw/memory.txt" # Komprimerad Chat historik
-MEMORY_MARKER = "KOM IHÅG."                # Lägg in Manuell rad i memory.txt
 MAX_MEMORY_LINE_CHARS = 5000
 
 MINSIM = 0.56                # 0.58 has worked, but injection was too rare
@@ -244,7 +243,6 @@ def inject_background(messages: list[dict], picked: list[str]) -> None:
 
 
 
-
 def pick_relevant_memory_semantic(prompt: str, top_k: int = 3, min_sim: float = 0.58) -> list[str]:
     """
     Semantisk retrieval med enkel robust regel:
@@ -304,41 +302,7 @@ def pick_relevant_memory_semantic(prompt: str, top_k: int = 3, min_sim: float = 
     return picked
 
 
-def cxagt_handle_memory_marker(messages: list[dict]) -> tuple[bool, dict]:
-    """
-    Hanterar "KOM IHÅG."-kommandot. Om marker används:
-      - appendar minnesrad
-      - returnerar ett färdigt Ollama-liknande svar (assistant ack)
-    Return:
-      (handled, response_json)
-    """
-    idx = find_last_user_index(messages)
-    if idx < 0:
-        return (False, {})
-
-    txt = (messages[idx].get("content") or "").strip()
-    if not txt.startswith(MEMORY_MARKER):
-        return (False, {})
-
-    to_save = txt[len(MEMORY_MARKER):].strip()
-    ok, why = append_memory(to_save)
-
-    ack = "✅ Sparat i minnet." if ok else f"⚠ Sparade inte (orsak: {why})."
-    resp = {
-        "model": "append_memory",
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "message": {"role": "assistant", "content": ack},
-        "done": True,
-    }
-    return (True, resp)
-
-
-
 def cxagt_handle_auto_scribe(messages: list[dict]) -> tuple[bool, dict]:
-    """
-    Automatic SCRIBE based on language phase-shift (acceptance + direction).
-    Uses the same pipeline and gates as manual SCRIBE.
-    """
     idx = find_last_user_index(messages)
     if idx < 0:
         return (False, {})
@@ -486,12 +450,7 @@ def api_chat():
 
     messages = payload.get("messages", [])
 
-    # 1) CxAGT: hantera manuell "KOM IHÅG."
-    handled, resp = cxagt_handle_memory_marker(messages)
-    if handled:
-        return jsonify(resp), 200
-
-    # 1c) CxAGT: always SCRIBE
+    # 1) CxAGT: always SCRIBE
     handled, resp = cxagt_handle_auto_scribe(messages)
 
     # 2) CxAGT: augmentera ev + bestäm om fallback får användas
@@ -590,7 +549,6 @@ def root():
         "primary": PRIMARY,
         "fallback": FALLBACK,
         "memory_file": MEMORY_FILE,
-        "memory_marker": MEMORY_MARKER,
         "minsim": MINSIM,
         "top_k": TOP_K,
     })
