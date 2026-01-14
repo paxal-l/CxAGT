@@ -1,6 +1,8 @@
 # Simple Context Augmentor (CxAGT)
 CxAGT - Experimental LLM memory wrapper for context, memory logging and embedding-based retrieval around local models (Ollama). Status: experimental / learning project.
 
+![CxAGT architecture](docs/cxagt_simple_diagram.png)
+
 What CxAGT does:
 CxAGT is a lightweight proxy or Ollama wrapper that sits in front of a local Ollama instance and augments chat requests with context derived from prior interactions.
 
